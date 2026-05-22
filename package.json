@@ -1,0 +1,65 @@
+{
+  "name": "ejentum-genkit",
+  "version": "0.1.0",
+  "description": "Genkit (Google) integration for the Ejentum Reasoning Harness. createEjentumTools(ai) returns four agent-callable tools (harness_reasoning, harness_code, harness_anti_deception, harness_memory) registered with your Genkit instance and passed to ai.generate({ tools }) or ai.chat({ tools }). Each call returns a task-matched cognitive operation engineered in two layers: a natural-language procedure plus an executable reasoning topology.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "genkit",
+    "google",
+    "google-genkit",
+    "firebase",
+    "ejentum",
+    "reasoning-harness",
+    "agentic-ai",
+    "llm",
+    "anti-deception",
+    "cognitive-scaffold",
+    "ai",
+    "typescript"
+  ],
+  "author": "Ejentum <info@ejentum.com>",
+  "license": "MIT",
+  "homepage": "https://ejentum.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ejentum/ejentum-genkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ejentum/ejentum-genkit/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "genkit": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "genkit": "^1.35.0",
+    "typescript": "^5.5.0",
+    "vitest": "^1.6.0",
+    "zod": "^3.23.0"
+  }
+}
