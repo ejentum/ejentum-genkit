@@ -1,7 +1,7 @@
 {
   "name": "ejentum-genkit",
-  "version": "0.1.0",
-  "description": "Genkit (Google) integration for the Ejentum Reasoning Harness. createEjentumTools(ai) returns four agent-callable tools (harness_reasoning, harness_code, harness_anti_deception, harness_memory) registered with your Genkit instance and passed to ai.generate({ tools }) or ai.chat({ tools }). Each call returns a task-matched cognitive operation engineered in two layers: a natural-language procedure plus an executable reasoning topology.",
+  "version": "0.2.0",
+  "description": "Genkit (Google) integration for the Ejentum Reasoning Harness. createEjentumTools(ai) returns eight agent-callable tools as an array: four dynamic (reasoning, code, anti-deception, memory) plus four adaptive (adaptive-reasoning, adaptive-code, adaptive-anti-deception, adaptive-memory) that pre-fit the operation to your task via an adapter LLM. Each call returns a structured cognitive injection: a natural-language procedure plus an executable reasoning topology.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

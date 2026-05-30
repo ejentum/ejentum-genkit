@@ -1,6 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { callLogicApi, VALID_MODES, createEjentumTools, createReasoningTool, createCodeTool, createAntiDeceptionTool, createMemoryTool } from "../src/index.js";
+import {
+  callLogicApi,
+  createAdaptiveAntiDeceptionTool,
+  createAdaptiveCodeTool,
+  createAdaptiveMemoryTool,
+  createAdaptiveReasoningTool,
+  createAntiDeceptionTool,
+  createCodeTool,
+  createEjentumTools,
+  createMemoryTool,
+  createReasoningTool,
+  VALID_MODES,
+} from "../src/index.js";
 
 const API_URL = "https://example.test/api/";
 
@@ -63,16 +75,20 @@ function makeStubGenkit() {
 }
 
 describe("createEjentumTools factory contract (stubbed Genkit)", () => {
-  it("calls defineTool four times with snake_case harness names", () => {
+  it("calls defineTool eight times with canonical mode-string names", () => {
     const { ai, captured } = makeStubGenkit();
     const tools = createEjentumTools(ai);
 
-    expect(tools).toHaveLength(4);
+    expect(tools).toHaveLength(8);
     expect(captured.map((c) => c.name).sort()).toEqual([
-      "harness_anti_deception",
-      "harness_code",
-      "harness_memory",
-      "harness_reasoning",
+      "adaptive-anti-deception",
+      "adaptive-code",
+      "adaptive-memory",
+      "adaptive-reasoning",
+      "anti-deception",
+      "code",
+      "memory",
+      "reasoning",
     ]);
   });
 
@@ -99,13 +115,13 @@ describe("createEjentumTools factory contract (stubbed Genkit)", () => {
   it("each tool's handler routes to the matching harness mode", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     fetchSpy.mockResolvedValue(
-      okResponse([{ reasoning: "scaffold" }]),
+      okResponse([{ reasoning: "injection" }]),
     );
 
     const { ai, captured } = makeStubGenkit();
     createEjentumTools(ai, { apiKey: "test-key", apiUrl: API_URL });
 
-    const reasoningTool = captured.find((c) => c.name === "harness_reasoning");
+    const reasoningTool = captured.find((c) => c.name === "reasoning");
     expect(reasoningTool).toBeDefined();
     await reasoningTool!.handler({ query: "test" });
 
@@ -119,31 +135,55 @@ describe("createEjentumTools factory contract (stubbed Genkit)", () => {
 });
 
 describe("per-tool factories (stubbed Genkit)", () => {
-  it("createReasoningTool registers with the correct name", () => {
+  it("createReasoningTool registers with the canonical name", () => {
     const { ai, captured } = makeStubGenkit();
     createReasoningTool(ai);
-    expect(captured[0]?.name).toBe("harness_reasoning");
+    expect(captured[0]?.name).toBe("reasoning");
   });
-  it("createCodeTool registers with the correct name", () => {
+  it("createCodeTool registers with the canonical name", () => {
     const { ai, captured } = makeStubGenkit();
     createCodeTool(ai);
-    expect(captured[0]?.name).toBe("harness_code");
+    expect(captured[0]?.name).toBe("code");
   });
-  it("createAntiDeceptionTool registers with the correct name", () => {
+  it("createAntiDeceptionTool registers with the canonical name", () => {
     const { ai, captured } = makeStubGenkit();
     createAntiDeceptionTool(ai);
-    expect(captured[0]?.name).toBe("harness_anti_deception");
+    expect(captured[0]?.name).toBe("anti-deception");
   });
-  it("createMemoryTool registers with the correct name", () => {
+  it("createMemoryTool registers with the canonical name", () => {
     const { ai, captured } = makeStubGenkit();
     createMemoryTool(ai);
-    expect(captured[0]?.name).toBe("harness_memory");
+    expect(captured[0]?.name).toBe("memory");
+  });
+  it("createAdaptiveReasoningTool registers with the canonical name", () => {
+    const { ai, captured } = makeStubGenkit();
+    createAdaptiveReasoningTool(ai);
+    expect(captured[0]?.name).toBe("adaptive-reasoning");
+  });
+  it("createAdaptiveCodeTool registers with the canonical name", () => {
+    const { ai, captured } = makeStubGenkit();
+    createAdaptiveCodeTool(ai);
+    expect(captured[0]?.name).toBe("adaptive-code");
+  });
+  it("createAdaptiveAntiDeceptionTool registers with the canonical name", () => {
+    const { ai, captured } = makeStubGenkit();
+    createAdaptiveAntiDeceptionTool(ai);
+    expect(captured[0]?.name).toBe("adaptive-anti-deception");
+  });
+  it("createAdaptiveMemoryTool registers with the canonical name", () => {
+    const { ai, captured } = makeStubGenkit();
+    createAdaptiveMemoryTool(ai);
+    expect(captured[0]?.name).toBe("adaptive-memory");
   });
 });
 
 describe("VALID_MODES constant", () => {
-  it("contains the four canonical modes", () => {
+  it("contains the eight canonical modes", () => {
     expect([...VALID_MODES].sort()).toEqual([
+      "adaptive-anti-deception",
+      "adaptive-code",
+      "adaptive-memory",
+      "adaptive-reasoning",
       "anti-deception",
       "code",
       "memory",
@@ -249,17 +289,29 @@ describe("callLogicApi success path", () => {
     fetchSpy.mockRestore();
   });
 
-  for (const mode of ["reasoning", "code", "anti-deception", "memory"] as const) {
+  for (const mode of [
+    "reasoning",
+    "code",
+    "anti-deception",
+    "memory",
+    "adaptive-reasoning",
+    "adaptive-code",
+    "adaptive-anti-deception",
+    "adaptive-memory",
+  ] as const) {
     it(`round-trips ${mode} mode`, async () => {
       fetchSpy.mockResolvedValue(
-        okResponse([{ [mode]: `[NEGATIVE GATE] sample ${mode} scaffold` }]),
+        okResponse([{ [mode]: `[PROCEDURE] sample ${mode} injection` }]),
       );
-      const query = mode === "memory" ? "I noticed drift. This might mean Y. Sharpen: Z." : "sample task";
+      const query =
+        mode === "memory" || mode === "adaptive-memory"
+          ? "I noticed drift. This might mean Y. Sharpen: Z."
+          : "sample task";
       const result = await callLogicApi(mode, query, {
         apiKey: "test-key",
         apiUrl: API_URL,
       });
-      expect(result).toContain(`sample ${mode} scaffold`);
+      expect(result).toContain(`sample ${mode} injection`);
       const init = fetchSpy.mock.calls[0]?.[1] as RequestInit;
       const body = JSON.parse(init.body as string);
       expect(body).toEqual({ query, mode });

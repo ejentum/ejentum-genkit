@@ -1,13 +1,17 @@
 /**
  * Genkit `ai.defineTool()` factories for the Ejentum Reasoning Harness.
  *
- * Unlike the other Ejentum framework shims, Genkit's `defineTool` is a
- * method on a `genkit()` instance, not a free function. So the factory
- * here accepts the caller's `ai` instance and registers four tools
- * against it. The returned tool actions are then passed to
- * `ai.generate({ tools })` or `ai.chat({ tools })`.
+ * Eight tools: four dynamic (`reasoning`, `code`, `anti-deception`,
+ * `memory`) and four adaptive (`adaptive-reasoning`, `adaptive-code`,
+ * `adaptive-anti-deception`, `adaptive-memory`) that pre-fit the
+ * cognitive operation to the caller's task via an adapter LLM.
+ * Adaptive tools require the Go or Super tier.
  *
- * The bracketed labels in the returned scaffold (`[NEGATIVE GATE]`,
+ * Tool name (the `name` field, visible to the LLM) equals the API mode
+ * string. Genkit's `defineTool` is bound to a `genkit()` instance, so
+ * the factory accepts the caller's `ai` and registers tools against it.
+ *
+ * The bracketed labels in the returned injection (`[NEGATIVE GATE]`,
  * `[PROCEDURE]`, `[REASONING TOPOLOGY]`, etc.) are instructions to the
  * agent, not content to display.
  */
@@ -23,31 +27,28 @@ const querySchema = z.object({
     .describe(
       "A 1-2 sentence description of the task the agent is about to " +
         "work on. Be specific about the failure mode to avoid. For " +
-        "the memory tool, format as: 'I noticed [X]. This might mean " +
-        "[Y]. Sharpen: [Z].'",
+        "memory and adaptive-memory, format as: 'I noticed [X]. This " +
+        "might mean [Y]. Sharpen: [Z].'",
     ),
 });
 
-/**
- * Reasoning-mode harness tool. Call BEFORE the agent performs
- * analysis, diagnosis, planning, or any multi-step task. Library
- * of 311 reasoning operations.
- */
+// ---------------------------------------------------------------------------
+// Dynamic tools
+// ---------------------------------------------------------------------------
+
 export function createReasoningTool(
   ai: Genkit,
   config: EjentumConfig = {},
 ): ToolAction {
   return ai.defineTool(
     {
-      name: "harness_reasoning",
+      name: "reasoning",
       description:
-        "Retrieve a reasoning scaffold before any analytical, " +
-        "diagnostic, planning, or multi-step task. Returns a " +
-        "structured scaffold with a named failure pattern, an " +
-        "executable procedure, a reasoning topology (graph DAG), " +
-        "and a falsification test from a library of 311 reasoning " +
-        "operations. Use 'query' to describe what the agent is " +
-        "about to work on in 1-2 sentences.",
+        "Retrieve a reasoning injection before any analytical, " +
+        "diagnostic, planning, or multi-step task. Returns a structured " +
+        "injection with a named failure pattern, an executable procedure, " +
+        "a reasoning topology (graph DAG), and a falsification test from " +
+        "a library of 311 reasoning operations.",
       inputSchema: querySchema,
       outputSchema: z.string(),
     },
@@ -55,25 +56,19 @@ export function createReasoningTool(
   );
 }
 
-/**
- * Code-mode harness tool. Call BEFORE the agent produces or
- * reviews code. Library of 128 software-engineering operations.
- */
 export function createCodeTool(
   ai: Genkit,
   config: EjentumConfig = {},
 ): ToolAction {
   return ai.defineTool(
     {
-      name: "harness_code",
+      name: "code",
       description:
-        "Retrieve a code scaffold before any code generation, " +
-        "refactoring, review, or debugging task. Returns a " +
-        "structured scaffold with a named code-failure pattern, an " +
-        "engineering procedure, a reasoning topology (graph DAG), " +
-        "and a verification step from a library of 128 code " +
-        "operations. Use 'query' to describe what the agent is " +
-        "coding or reviewing in 1-2 sentences.",
+        "Retrieve a code injection before any code generation, " +
+        "refactoring, review, or debugging task. Returns a structured " +
+        "injection with a named code-failure pattern, an engineering " +
+        "procedure, a reasoning topology (graph DAG), and a verification " +
+        "step from a library of 128 code operations.",
       inputSchema: querySchema,
       outputSchema: z.string(),
     },
@@ -81,27 +76,20 @@ export function createCodeTool(
   );
 }
 
-/**
- * Anti-deception harness tool. Call BEFORE the agent responds to
- * prompts that pressure validation, manufactured agreement,
- * authority appeals, fabricated commitments, or any setup where
- * the obvious helpful answer would compromise honesty.
- */
 export function createAntiDeceptionTool(
   ai: Genkit,
   config: EjentumConfig = {},
 ): ToolAction {
   return ai.defineTool(
     {
-      name: "harness_anti_deception",
+      name: "anti-deception",
       description:
-        "Retrieve an anti-deception scaffold before responding to " +
-        "any prompt that pressures the agent to validate, certify, " +
-        "or soften an honest assessment. Returns a structured " +
-        "scaffold with a named deception pattern, an integrity " +
-        "procedure, a detection topology (graph DAG with " +
-        "omission-bias gates), and an integrity check. Use 'query' " +
-        "to describe the integrity dynamic at play in 1-2 sentences.",
+        "Retrieve an anti-deception injection before responding to any " +
+        "prompt that pressures the agent to validate, certify, or soften " +
+        "an honest assessment. Returns a structured injection with a " +
+        "named deception pattern, an integrity procedure, a detection " +
+        "topology (graph DAG with omission-bias gates), and an integrity " +
+        "check from a library of 139 operations.",
       inputSchema: querySchema,
       outputSchema: z.string(),
     },
@@ -109,25 +97,19 @@ export function createAntiDeceptionTool(
   );
 }
 
-/**
- * Memory-mode harness tool. Call ONLY when sharpening an
- * observation the agent has already formed about cross-turn
- * drift or pattern. Filter-oriented, not write-oriented.
- */
 export function createMemoryTool(
   ai: Genkit,
   config: EjentumConfig = {},
 ): ToolAction {
   return ai.defineTool(
     {
-      name: "harness_memory",
+      name: "memory",
       description:
-        "Retrieve a memory-mode scaffold ONLY when sharpening an " +
+        "Retrieve a memory-mode injection ONLY when sharpening an " +
         "observation the agent has already formed about cross-turn " +
-        "drift or pattern. Filter-oriented, not write-oriented; do " +
-        "not call for fact extraction. Format 'query' as: 'I " +
-        "noticed [X]. This might mean [Y]. Sharpen: [Z].' Calling " +
-        "with an empty mind defeats the harness.",
+        "drift or pattern. Filter-oriented, not write-oriented. Format " +
+        "'query' as: 'I noticed [X]. This might mean [Y]. Sharpen: [Z].' " +
+        "Library of 101 perception operations.",
       inputSchema: querySchema,
       outputSchema: z.string(),
     },
@@ -135,13 +117,89 @@ export function createMemoryTool(
   );
 }
 
+// ---------------------------------------------------------------------------
+// Adaptive tools (Go or Super tier required)
+// ---------------------------------------------------------------------------
+
+export function createAdaptiveReasoningTool(
+  ai: Genkit,
+  config: EjentumConfig = {},
+): ToolAction {
+  return ai.defineTool(
+    {
+      name: "adaptive-reasoning",
+      description:
+        "Same triggers as `reasoning`, but the returned operation is " +
+        "REWRITTEN by an adapter LLM to fit the specific task. Procedure " +
+        "steps and topology DAG nodes are concretized with task-specific " +
+        "language. Use when the dynamic tool is too generic or for " +
+        "high-stakes analytical work. Requires Go or Super tier. Cost ~2-3s.",
+      inputSchema: querySchema,
+      outputSchema: z.string(),
+    },
+    async ({ query }) => callLogicApi("adaptive-reasoning", query, config),
+  );
+}
+
+export function createAdaptiveCodeTool(
+  ai: Genkit,
+  config: EjentumConfig = {},
+): ToolAction {
+  return ai.defineTool(
+    {
+      name: "adaptive-code",
+      description:
+        "Same triggers as `code`, but the returned operation is REWRITTEN " +
+        "by an adapter LLM to fit the specific code task: language, " +
+        "framework, and failure modes are concretized in every step. " +
+        "Requires Go or Super tier. Cost ~2-3s.",
+      inputSchema: querySchema,
+      outputSchema: z.string(),
+    },
+    async ({ query }) => callLogicApi("adaptive-code", query, config),
+  );
+}
+
+export function createAdaptiveAntiDeceptionTool(
+  ai: Genkit,
+  config: EjentumConfig = {},
+): ToolAction {
+  return ai.defineTool(
+    {
+      name: "adaptive-anti-deception",
+      description:
+        "Same triggers as `anti-deception`, but the returned operation " +
+        "is REWRITTEN by an adapter LLM to fit the specific integrity " +
+        "dynamic at play. Use when stakes of a soft answer are high. " +
+        "Requires Go or Super tier. Cost ~2-3s.",
+      inputSchema: querySchema,
+      outputSchema: z.string(),
+    },
+    async ({ query }) =>
+      callLogicApi("adaptive-anti-deception", query, config),
+  );
+}
+
+export function createAdaptiveMemoryTool(
+  ai: Genkit,
+  config: EjentumConfig = {},
+): ToolAction {
+  return ai.defineTool(
+    {
+      name: "adaptive-memory",
+      description:
+        "Same triggers as `memory`, but the returned operation is " +
+        "REWRITTEN by an adapter LLM to fit the specific observation. " +
+        "Observe FIRST, then call. Requires Go or Super tier. Cost ~2-3s.",
+      inputSchema: querySchema,
+      outputSchema: z.string(),
+    },
+    async ({ query }) => callLogicApi("adaptive-memory", query, config),
+  );
+}
+
 /**
- * Register all four Ejentum harness tools with a Genkit instance.
- *
- * Genkit's `defineTool` is bound to a `genkit()` instance, so this
- * factory accepts the caller's `ai` and registers the four tools
- * against it. The returned array goes into `ai.generate({ tools })`
- * or `ai.chat({ tools })`.
+ * Register all eight Ejentum harness tools with a Genkit instance.
  *
  * ```ts
  * import { genkit } from "genkit";
@@ -171,5 +229,9 @@ export function createEjentumTools(
     createCodeTool(ai, config),
     createAntiDeceptionTool(ai, config),
     createMemoryTool(ai, config),
+    createAdaptiveReasoningTool(ai, config),
+    createAdaptiveCodeTool(ai, config),
+    createAdaptiveAntiDeceptionTool(ai, config),
+    createAdaptiveMemoryTool(ai, config),
   ];
 }
